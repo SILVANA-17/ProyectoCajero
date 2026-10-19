@@ -4,6 +4,8 @@
  */
 package cajeroelectronico;
 
+import java.util.HashMap;
+
 /**
  *
  * @author DELL
@@ -15,6 +17,16 @@ public class CajeroElectronico {
      */
     public static void main(String[] args) {
         // TODO code application logic here
+        HashMap<Integer,Integer> billete=new HashMap<>();
+        var num=new HashMap<Integer,Integer>();
+        billete.put(10000, 100);
+        billete.put(20000, 100);
+        billete.put(50000, 100);
+        billete.put(100000, 100);
+        
+        interfaz4 ventana=new interfaz4();
+        ventana.setLocationRelativeTo(null);
+        ventana.setVisible(true);
     }
     
 }

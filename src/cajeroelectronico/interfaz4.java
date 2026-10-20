@@ -4,25 +4,71 @@ package cajeroelectronico;
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-
+import java.util.HashMap;
+import javax.swing.table.DefaultTableModel;
+import java.text.NumberFormat;
+import java.util.Locale;
 /**
  *
  * @author DELL
  */
 public class interfaz4 extends javax.swing.JFrame {
-
-    /**
-     * Creates new form interfaz4
-     */
+    public HashMap<Integer, Integer> billete;
+    public DefaultTableModel modeloTabla;
+    
+    public int[] denominaciones={100000, 50000, 20000, 10000};
+    
     public interfaz4() {
+        this(crearBilletesIniciales());
+    }
+    public interfaz4(HashMap<Integer, Integer> billete){
         initComponents();
+        
+        this.billete=billete;
+        txtPantalla.setText("Digite el valor que va retirar: \n\n");
+        iniciarTabla();
     }
     public void agregarNum(String numero) {
         String textoActual = txtPantalla.getText();
+        if (textoActual.contains(" ")) {
+            txtPantalla.setText(numero);
+        } else {
             txtPantalla.setText(textoActual + numero);
-        
+        }
     }
-
+    public static HashMap<Integer, Integer> crearBilletesIniciales(){
+        HashMap<Integer, Integer> billetesIniciales=new HashMap<>();
+        
+        billetesIniciales.put(10000, 100);
+        billetesIniciales.put(20000, 100);
+        billetesIniciales.put(50000, 100);
+        billetesIniciales.put(100000, 100);
+        
+        return billetesIniciales;
+    }
+    public void iniciarTabla(){
+        modeloTabla=new DefaultTableModel(new Object[]{"BILLETES","DISPONIBLES","TOTAL"},0){
+            @Override
+            public boolean isCellEditable(int fila, int columna){
+            return false;
+            }
+        };
+        tablaBilletes.setModel(modeloTabla);
+        actualizarTablaBilletes();
+    }
+    public void actualizarTablaBilletes(){
+        modeloTabla.setRowCount(0);
+        for(int denominacion : denominaciones){
+            int cantidad=billete.getOrDefault(denominacion, 0);
+            int valorTotal = denominacion*cantidad;
+            
+            modeloTabla.addRow(new Object[]{reiniciarPesos(denominacion), cantidad, reiniciarPesos(valorTotal)});
+        }
+    }
+    public String reiniciarPesos(int valor){
+        NumberFormat formato = NumberFormat.getIntegerInstance(new Locale("es", "CO"));
+        return "$" + formato.format(valor);
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -50,7 +96,7 @@ public class interfaz4 extends javax.swing.JFrame {
         btnCancelar = new javax.swing.JButton();
         btnConfirmar = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
-        tabla = new javax.swing.JTable();
+        tablaBilletes = new javax.swing.JTable();
 
         jButton14.setText("jButton14");
 
@@ -164,18 +210,18 @@ public class interfaz4 extends javax.swing.JFrame {
             }
         });
 
-        tabla.setModel(new javax.swing.table.DefaultTableModel(
+        tablaBilletes.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null}
+                {null, null, null},
+                {null, null, null},
+                {null, null, null},
+                {null, null, null}
             },
             new String [] {
-                "BILLETES", "DISPONIBLES "
+                "BILLETES", "DISPONIBLES ", "CANTIDAD TOTAL"
             }
         ));
-        jScrollPane2.setViewportView(tabla);
+        jScrollPane2.setViewportView(tablaBilletes);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -306,15 +352,36 @@ public class interfaz4 extends javax.swing.JFrame {
     }//GEN-LAST:event_btnOchoActionPerformed
 
     private void btnBorrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBorrarActionPerformed
-        
+      txtPantalla.setText(" ");
+      txtPantalla.setText("Digite el valor que va retirar: \n\n");
     }//GEN-LAST:event_btnBorrarActionPerformed
 
     private void btnCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarActionPerformed
        txtPantalla.setText("");
+       txtPantalla.setText("Haz cancelado tu transaccion :D"+"\n Dale a borrar para empezar de nuevo.");
     }//GEN-LAST:event_btnCancelarActionPerformed
 
     private void btnConfirmarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnConfirmarActionPerformed
-        // TODO add your handling code here:
+        try {
+        String cantidad = txtPantalla.getText();
+        if (cantidad.isEmpty()) {
+            txtPantalla.setText("Por favor digite un monto ");
+            return;
+        }
+        int monto = Integer.parseInt(cantidad);
+        if (monto % 10 != 0) {
+            txtPantalla.setText("El monto debe ser múltiplo de 10 ");
+            return;
+        }
+        if (monto < 10000 || monto > 1000000) {
+            txtPantalla.setText("El Monto esta fuera de rango ");
+            return;
+        }
+        txtPantalla.setText("Transacción exitosa! \nRetiraste: " + monto);
+        }catch (NumberFormatException e) {
+            txtPantalla.setText("Ingrese solo números válidos");
+        }
+        actualizarTablaBilletes();
     }//GEN-LAST:event_btnConfirmarActionPerformed
 
     /**
@@ -370,7 +437,7 @@ public class interfaz4 extends javax.swing.JFrame {
     private javax.swing.JButton jButton14;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JTable tabla;
+    private javax.swing.JTable tablaBilletes;
     private javax.swing.JTextArea txtPantalla;
     // End of variables declaration//GEN-END:variables
 }

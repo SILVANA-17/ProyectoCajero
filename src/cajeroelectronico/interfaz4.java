@@ -362,26 +362,91 @@ public class interfaz4 extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCancelarActionPerformed
 
     private void btnConfirmarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnConfirmarActionPerformed
-        try {
-        String cantidad = txtPantalla.getText();
-        if (cantidad.isEmpty()) {
-            txtPantalla.setText("Por favor digite un monto ");
+        String textPantalla = txtPantalla.getText();
+        String cantidad = textPantalla;
+        
+        if(cantidad.isEmpty()){
+            txtPantalla.setText("Por favor, digite un valor. \n"+"Vuelva a ingresar el valor.");
             return;
         }
-        int monto = Integer.parseInt(cantidad);
-        if (monto % 10 != 0) {
-            txtPantalla.setText("El monto debe ser múltiplo de 10 ");
+        int valor=Integer.parseInt(cantidad);
+            
+        if(valor % 10 !=0){
+            txtPantalla.setText("El valor debe ser multiplo de 10. \n"+"Vuelve a ingresar el valor.");
             return;
         }
-        if (monto < 10000 || monto > 1000000) {
-            txtPantalla.setText("El Monto esta fuera de rango ");
+        if(valor % 1000 != 0){
+            txtPantalla.setText("Ingresar valor valido. ");
             return;
         }
-        txtPantalla.setText("Transacción exitosa! \nRetiraste: " + monto);
-        }catch (NumberFormatException e) {
-            txtPantalla.setText("Ingrese solo números válidos");
+        if(valor<10000 || valor>100000){
+            txtPantalla.setText("El monto debe ser entre $10.000 y $1.000.000.\n"+"Vuelva e ingrese el valor.");
+            return;
         }
-        actualizarTablaBilletes();
+        int reg100k=0, reg50k=0, reg20k=0, reg10k=0;
+        int tempValor=valor;
+        
+        if(valor==50000){
+            reg20k=2;
+            reg10k=1;
+        }else if(valor==100000){
+            reg50k=1;
+            reg20k=2;
+            reg10k=0;
+        }else{
+            if(valor>100000){
+                reg50k +=1;
+                reg20k +=2;
+                reg10k +=1;
+                tempValor -=100000;
+            }
+            if(tempValor>=100000){
+                reg100k += tempValor/100000;
+                tempValor %=100000;
+            }
+            if(tempValor>=50000){
+                reg50k += tempValor/50000;
+                tempValor %=50000;
+            }
+            if(tempValor>=20000){
+                reg20k += tempValor/20000;
+                tempValor %=20000;
+            }
+            if(tempValor>=10000){
+                reg10k += tempValor/10000;
+                tempValor %=10000;
+            }
+        }
+        int disp100k=billete.getOrDefault(100000,0);
+        int disp50k=billete.getOrDefault(50000,0);
+        int disp20k=billete.getOrDefault(20000,0);
+        int disp10k=billete.getOrDefault(10000,0);
+        
+        if(disp100k<reg100k || disp50k<reg50k || disp20k<reg20k || disp10k<reg10k){
+            txtPantalla.setText("No hay billetes disponibles.");
+            return;
+        }
+        billete.put(100000, disp100k-reg100k);
+        billete.put(50000, disp50k-reg50k);
+        billete.put(20000, disp20k-reg20k);
+        billete.put(10000, disp10k-reg10k);
+        
+        String mensaje="Su trasaccion fue realizada con exito.\n"+"El retiro fue de un valor de $"+valor+ "\nBilletes entregados.";
+        if(reg100k>0){
+            mensaje += "\n-100k: "+reg100k;
+        }
+        if(reg50k>0){
+            mensaje += "\n-50k: "+reg50k;
+        }
+        if(reg20k>0){
+            mensaje += "\n-20k: "+reg20k;
+        }
+        if(reg10k>0){
+            mensaje += "\n-10k: "+reg10k;
+        }
+        txtPantalla.setText(mensaje);
+        
+        actualizarTablaBilletes(); 
     }//GEN-LAST:event_btnConfirmarActionPerformed
 
     /**

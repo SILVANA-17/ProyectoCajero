@@ -4,10 +4,11 @@ package cajeroelectronico;
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-import java.util.HashMap;
 import javax.swing.table.DefaultTableModel;
-import java.text.NumberFormat;
-import java.util.Locale;
+import javax.swing.*;
+//descargar librería JDBC en https://www.mysql.com/products/connector/
+import java.sql.*;
+import java.util.HashMap;
 /**
  *
  * @author DELL
@@ -15,8 +16,6 @@ import java.util.Locale;
 public class interfaz4 extends javax.swing.JFrame {
     public HashMap<Integer, Integer> billete;
     public DefaultTableModel modeloTabla;
-    
-    public int[] denominaciones={100000, 50000, 20000, 10000};
     
     public interfaz4(){
         
@@ -29,6 +28,20 @@ public class interfaz4 extends javax.swing.JFrame {
         this.billete.put(100000, 100);
         cargarDatos();
    }
+    public Connection conectar(){
+       String usuario="silvana";
+       String contrasena="#3Programacion3"; 
+       String url="jdbc:mysql://72.167.84.254:3306/banco";//localhost:3306/agenda"; 
+       Connection con=null;
+       try{         
+          con= DriverManager.getConnection(url,usuario,contrasena);
+          txtPantalla.setText("Conexión correcta");
+          return con;
+       }catch (Exception e){
+          txtPantalla.setText("Conexión incorrecta: " + e.getMessage()); 
+          return null;
+       }
+    }
     public void setInventario(java.util.HashMap<Integer, Integer> billete){
         this.billete=billete;
         cargarDatos();
@@ -346,118 +359,106 @@ public class interfaz4 extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCancelarActionPerformed
 
     private void btnConfirmarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnConfirmarActionPerformed
-        String textPantalla = txtPantalla.getText();
-        String cantidad = textPantalla;
+       try {
+        String cantidad = txtPantalla.getText();
+        if (cantidad.isEmpty()) {
+            txtPantalla.setText("Por favor digite un monto ");
+            return;
+        }
+        int valor = Integer.parseInt(cantidad);
+        if (valor % 10 != 0) {
+            txtPantalla.setText("El monto debe ser múltiplo de 10 ");
+            return;
+        }
+        if (valor % 10000 != 0 ){
+            txtPantalla.setText("Ingresar monto valido ");
+            return;
+        }
+        if (valor < 10000 || valor > 1000000) {
+            txtPantalla.setText("El Monto esta fuera de rango ");
+            return;
+        }
         
-        if(cantidad.isEmpty()){
-            txtPantalla.setText("Por favor, digite un valor. \n"+"Vuelva a ingresar el valor.");
-            return;
-        }
-        int valor=Integer.parseInt(cantidad);
-            
-        if(valor % 10 !=0){
-            txtPantalla.setText("El valor debe ser multiplo de 10. \n"+"Vuelve a ingresar el valor.");
-            return;
-        }
-        if(valor % 10000 != 0){
-            txtPantalla.setText("Ingresar valor valido. ");
-            return;
-        }
-        if(valor<10000 || valor>100000){
-            txtPantalla.setText("El monto debe ser entre $10.000 y $1.000.000.\n"+"Vuelva e ingrese el valor.");
-            return;
-        }
-        int reg100k=0, reg50k=0, reg20k=0, reg10k=0;
-        int tempValor=valor;
+        int cienk = 0, cincuentak = 0, veintek = 0, diesk = 0;
+        int temp = valor;
         
-        if(valor==50000){
-            reg20k=2;
-            reg10k=1;
-        }else if(valor==100000){
-            reg50k=1;
-            reg20k=2;
-            reg10k=0;
-        }else{
-            if(valor>100000){
-                reg50k +=1;
-                reg20k +=2;
-                reg10k +=1;
-                tempValor -=100000;
+        if (valor == 50000){
+            veintek = 2;
+            diesk = 1;
+        }else if (valor == 100000){
+            cincuentak = 1;
+            veintek = 2;
+            diesk = 1;
+        } else {
+            if (valor > 100000) {
+            cincuentak += 1;
+            veintek += 2;
+            diesk += 1;
+            temp -= 100000;
             }
-            if(tempValor>=100000){
-                reg100k += tempValor/100000;
-                tempValor %=100000;
-            }
-            if(tempValor>=50000){
-                reg50k += tempValor/50000;
-                tempValor %=50000;
-            }
-            if(tempValor>=20000){
-                reg20k += tempValor/20000;
-                tempValor %=20000;
-            }
-            if(tempValor>=10000){
-                reg10k += tempValor/10000;
-                tempValor %=10000;
-            }
-        }
-        int disp100k=billete.getOrDefault(100000,0);
-        int disp50k=billete.getOrDefault(50000,0);
-        int disp20k=billete.getOrDefault(20000,0);
-        int disp10k=billete.getOrDefault(10000,0);
         
-        if(disp100k<reg100k || disp50k<reg50k || disp20k<reg20k || disp10k<reg10k){
-            txtPantalla.setText("No hay billetes disponibles.");
+        if (temp >= 100000) {
+            cienk += temp / 100000;
+            temp %= 100000;
+        }
+        if (temp >= 50000) {
+            cincuentak += temp / 50000;
+            temp %= 50000;
+        }
+        if (temp >= 20000) {
+            veintek += temp / 20000;
+            temp %= 20000;
+        }
+        if (temp >= 10000) {
+            diesk += temp / 10000;
+            temp %= 10000;
+        }
+        
+        }
+        
+        int dispensar100 = billete.getOrDefault(100000, 0);
+        int dispensar50 = billete.getOrDefault(50000, 0);
+        int dispensar20 = billete.getOrDefault(20000, 0);
+        int dispensar10 = billete.getOrDefault(10000, 0);
+        
+        if (dispensar100 < cienk || dispensar50 < cincuentak || dispensar20 < veintek || dispensar10 < diesk) {
+            txtPantalla.setText("No hay fondo de billete en el cajero");
             return;
         }
-        billete.put(100000, disp100k-reg100k);
-        billete.put(50000, disp50k-reg50k);
-        billete.put(20000, disp20k-reg20k);
-        billete.put(10000, disp10k-reg10k);
         
-        String mensaje="Su trasaccion fue realizada con exito.\n"+"El retiro fue de un valor de $"+valor+ "\nBilletes entregados.";
-        if(reg100k>0){
-            mensaje += "\n-100k: "+reg100k;
+        billete.put(100000, dispensar100 - cienk);
+        billete.put(50000, dispensar50 - cincuentak);
+        billete.put(20000, dispensar20 - veintek);
+        billete.put(10000, dispensar10 - diesk);
+        
+        String mensaje = "Su transacción fue realizada con éxito.\nEl retiro fue de un valor de $" + valor + "\nBilletes entregados:";
+
+        if (cienk > 0) {
+            mensaje += "\n 100k: " + cienk;
         }
-        if(reg50k>0){
-            mensaje += "\n-50k: "+reg50k;
+        if (cincuentak > 0) {
+            mensaje += "\n 50k: " + cincuentak;
         }
-        if(reg20k>0){
-            mensaje += "\n-20k: "+reg20k;
+        if (veintek > 0) {
+            mensaje += "\n 20k: " + veintek;
         }
-        if(reg10k>0){
-            mensaje += "\n-10k: "+reg10k;
+        if (diesk > 0) {
+            mensaje += "\n 10k: " + diesk;
         }
         txtPantalla.setText(mensaje);
         
-        cargarDatos(); 
+        cargarDatos();
+        }catch (NumberFormatException e) {
+            txtPantalla.setText("Ingrese solo números válidos");
+        }
+        
     }//GEN-LAST:event_btnConfirmarActionPerformed
 
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(interfaz4.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(interfaz4.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(interfaz4.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(interfaz4.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
+        
         //</editor-fold>
 
         /* Create and display the form */

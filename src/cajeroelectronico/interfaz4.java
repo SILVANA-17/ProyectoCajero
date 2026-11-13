@@ -15,18 +15,23 @@ import java.util.HashMap;
  */
 public class interfaz4 extends javax.swing.JFrame {
     public HashMap<Integer, Integer> billete;
-    public DefaultTableModel modeloTabla;
+     public int idCajeroActual = 1; 
+    public int cuentaClienteActual = 0;
+    private String inputActual = "";
+    private int pasoActual = 0;
     
     public interfaz4(){
         
         initComponents();
-        txtPantalla.setText("Digite el valor que va retirar: \n\n");
+        txtPantalla.setText("Ingrese el ID del Cajero:");
         this.billete=new java.util.HashMap<>();
         this.billete.put(10000, 100);
         this.billete.put(20000, 100);
         this.billete.put(50000, 100);
         this.billete.put(100000, 100);
         cargarDatos();
+        DefaultTableModel modelo = (DefaultTableModel) tablaBilletes.getModel();
+        modelo.setRowCount(0);
    }
     public Connection conectar(){
        String usuario="silvana";
@@ -35,7 +40,6 @@ public class interfaz4 extends javax.swing.JFrame {
        Connection con=null;
        try{         
           con= DriverManager.getConnection(url,usuario,contrasena);
-          txtPantalla.setText("Conexión correcta");
           return con;
        }catch (Exception e){
           txtPantalla.setText("Conexión incorrecta: " + e.getMessage()); 
@@ -46,26 +50,62 @@ public class interfaz4 extends javax.swing.JFrame {
         this.billete=billete;
         cargarDatos();
     }
-    public void cargarDatos(){
-        javax.swing.table.DefaultTableModel modelo=(javax.swing.table.DefaultTableModel) tablaBilletes.getModel();
-        modelo.setRowCount(0);
+    public void cargarDatos() {
+        Connection con = conectar();
+        if (con == null) return;
+    
+        try {
+            String sql = "SELECT ndiez, nveinte, ncincuenta, ncien FROM cajeros WHERE id = ?";
+            PreparedStatement consultaPreparada = con.prepareStatement(sql);
+            consultaPreparada.setInt(1, idCajeroActual);
+            ResultSet resultado = consultaPreparada.executeQuery();
         
-        int[] denominaciones={10000, 20000, 50000, 100000};
+            DefaultTableModel modelo = (DefaultTableModel) tablaBilletes.getModel();
+            modelo.setRowCount(0); // Limpiar siempre antes de pintar
         
-        for(int denominacion : denominaciones){
-            if(billete !=null && billete.containsKey(denominacion)){
-                int cantidad = billete.get(denominacion);
-                int total = denominacion * cantidad;
-                modelo.addRow(new Object [] {denominacion, cantidad, total});
+            if (resultado.next()) {
+                int ndiez = resultado.getInt("ndiez");
+                int nveinte = resultado.getInt("nveinte");
+                int ncincuenta = resultado.getInt("ncincuenta");
+                int ncien = resultado.getInt("ncien");
+            
+                modelo.addRow(new Object[]{10000, ndiez, 10000 * ndiez});
+                modelo.addRow(new Object[]{20000, nveinte, 20000 * nveinte});
+                modelo.addRow(new Object[]{50000, ncincuenta, 50000 * ncincuenta});
+                modelo.addRow(new Object[]{100000, ncien, 100000 * ncien});
             }
+            resultado.close();
+            consultaPreparada.close();
+            con.close();
+        } catch (SQLException e) {
+            System.out.println("Error al cargar inventario: " + e.getMessage());
+        }
+    }
+    
+    public void liberarSistema(Connection con) {
+        try {
+            PreparedStatement consultaPreparada1 = con.prepareStatement("UPDATE cajeros SET estado = 0 WHERE id = ?");
+            consultaPreparada1.setInt(1, idCajeroActual);
+            consultaPreparada1.executeUpdate();
+            consultaPreparada1.close();
+
+            PreparedStatement consultaPreparada2 = con.prepareStatement("UPDATE clientes SET estado = 0 WHERE ncuenta = ?");
+            consultaPreparada2.setInt(1, cuentaClienteActual);
+            consultaPreparada2.executeUpdate();
+            consultaPreparada2.close();
+            con.close();
+        } catch (SQLException e) {
+            System.out.println("Error al liberar el sistema: " + e.getMessage());
         }
     }
     public void agregarNum(String numero) {
-        String textoActual = txtPantalla.getText();
-        if (textoActual.contains(" ")) {
-            txtPantalla.setText(numero);
+        inputActual += numero;
+        if (pasoActual == 0) {
+            txtPantalla.setText("Ingrese el ID del Cajero: " + inputActual);
+        } else if (pasoActual == 1) {
+            txtPantalla.setText("Ingrese el No. de CUENTA: " + inputActual);
         } else {
-            txtPantalla.setText(textoActual + numero);
+            txtPantalla.setText("Ingrese el MONTO: " + inputActual);
         }
     }
     @SuppressWarnings("unchecked")
@@ -99,7 +139,6 @@ public class interfaz4 extends javax.swing.JFrame {
         txtPantalla.setEditable(false);
         txtPantalla.setColumns(20);
         txtPantalla.setRows(5);
-        txtPantalla.setText("Digita el valor que quieres retirar: ");
         jScrollPane1.setViewportView(txtPantalla);
 
         btnSiete.setText("7");
@@ -252,11 +291,8 @@ public class interfaz4 extends javax.swing.JFrame {
                             .addComponent(btnCancelar, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 97, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(btnBorrar, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 97, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(btnConfirmar, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 97, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 369, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 369, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 156, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 369, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 369, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -314,9 +350,9 @@ public class interfaz4 extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCeroActionPerformed
 
     private void btnBorrarNumActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBorrarNumActionPerformed
-        String text = txtPantalla.getText();
-        if (text.length()>0){
-            txtPantalla.setText(text.substring(0, text.length()-1));
+         if (inputActual.length() > 0) {
+            inputActual = inputActual.substring(0, inputActual.length() - 1);
+            txtPantalla.setText("> " + inputActual);
         }
     }//GEN-LAST:event_btnBorrarNumActionPerformed
 
@@ -349,8 +385,13 @@ public class interfaz4 extends javax.swing.JFrame {
     }//GEN-LAST:event_btnOchoActionPerformed
 
     private void btnBorrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBorrarActionPerformed
-      txtPantalla.setText(" ");
-      txtPantalla.setText("Digite el valor que va retirar: \n\n");
+        Connection con = conectar();
+        if (con != null) {
+            liberarSistema(con);
+        }
+        inputActual = "";
+        pasoActual = 0;
+        txtPantalla.setText("Ingrese el ID del Cajero (1 - 7):\n> ");
     }//GEN-LAST:event_btnBorrarActionPerformed
 
     private void btnCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarActionPerformed
@@ -359,99 +400,200 @@ public class interfaz4 extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCancelarActionPerformed
 
     private void btnConfirmarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnConfirmarActionPerformed
-       try {
-        String cantidad = txtPantalla.getText();
-        if (cantidad.isEmpty()) {
-            txtPantalla.setText("Por favor digite un monto ");
+        if (inputActual.isEmpty()) {
+            txtPantalla.setText("Por favor, ingrese un valor usando el teclado.");
             return;
         }
-        int valor = Integer.parseInt(cantidad);
-        if (valor % 10 != 0) {
-            txtPantalla.setText("El monto debe ser múltiplo de 10 ");
-            return;
-        }
-        if (valor % 10000 != 0 ){
-            txtPantalla.setText("Ingresar monto valido ");
-            return;
-        }
-        if (valor < 10000 || valor > 1000000) {
-            txtPantalla.setText("El Monto esta fuera de rango ");
-            return;
-        }
-        
-        int cienk = 0, cincuentak = 0, veintek = 0, diesk = 0;
-        int temp = valor;
-        
-        if (valor == 50000){
-            veintek = 2;
-            diesk = 1;
-        }else if (valor == 100000){
-            cincuentak = 1;
-            veintek = 2;
-            diesk = 1;
-        } else {
-            if (valor > 100000) {
-            cincuentak += 1;
-            veintek += 2;
-            diesk += 1;
-            temp -= 100000;
-            }
-        
-        if (temp >= 100000) {
-            cienk += temp / 100000;
-            temp %= 100000;
-        }
-        if (temp >= 50000) {
-            cincuentak += temp / 50000;
-            temp %= 50000;
-        }
-        if (temp >= 20000) {
-            veintek += temp / 20000;
-            temp %= 20000;
-        }
-        if (temp >= 10000) {
-            diesk += temp / 10000;
-            temp %= 10000;
-        }
-        
-        }
-        
-        int dispensar100 = billete.getOrDefault(100000, 0);
-        int dispensar50 = billete.getOrDefault(50000, 0);
-        int dispensar20 = billete.getOrDefault(20000, 0);
-        int dispensar10 = billete.getOrDefault(10000, 0);
-        
-        if (dispensar100 < cienk || dispensar50 < cincuentak || dispensar20 < veintek || dispensar10 < diesk) {
-            txtPantalla.setText("No hay fondo de billete en el cajero");
-            return;
-        }
-        
-        billete.put(100000, dispensar100 - cienk);
-        billete.put(50000, dispensar50 - cincuentak);
-        billete.put(20000, dispensar20 - veintek);
-        billete.put(10000, dispensar10 - diesk);
-        
-        String mensaje = "Su transacción fue realizada con éxito.\nEl retiro fue de un valor de $" + valor + "\nBilletes entregados:";
 
-        if (cienk > 0) {
-            mensaje += "\n 100k: " + cienk;
-        }
-        if (cincuentak > 0) {
-            mensaje += "\n 50k: " + cincuentak;
-        }
-        if (veintek > 0) {
-            mensaje += "\n 20k: " + veintek;
-        }
-        if (diesk > 0) {
-            mensaje += "\n 10k: " + diesk;
-        }
-        txtPantalla.setText(mensaje);
-        
-        cargarDatos();
-        }catch (NumberFormatException e) {
+        Connection con = conectar();
+        if (con == null) return;
+
+        try {
+            if (pasoActual == 0) {
+                idCajeroActual = Integer.parseInt(inputActual);
+                
+                PreparedStatement probarCajero = con.prepareStatement("SELECT * FROM cajeros WHERE id = ?");
+                probarCajero.setInt(1, idCajeroActual);
+                ResultSet resultadoCajero = probarCajero.executeQuery();
+                
+                if (!resultadoCajero.next()) {
+                    txtPantalla.setText("El Cajero con ID " + idCajeroActual + " no existe.\nIngrese ID de Cajero (1 - 7):\n ");
+                    resultadoCajero.close();
+                    probarCajero.close();
+                    con.close();
+                    inputActual = ""; 
+                    return;
+                }
+                resultadoCajero.close();
+                probarCajero.close();
+                con.close();
+
+                cargarDatos();
+
+                pasoActual = 1;
+                inputActual = "";
+                txtPantalla.setText("Cajero #" + idCajeroActual + " seleccionado.\nIngrese el No. de CUENTA:\n> ");
+
+            } else if (pasoActual == 1) {
+
+                cuentaClienteActual = Integer.parseInt(inputActual);
+                
+                PreparedStatement probarCliente = con.prepareStatement("SELECT nombre, saldo FROM clientes WHERE ncuenta = ?");
+                probarCliente.setInt(1, cuentaClienteActual);
+                ResultSet resultadoCliente = probarCliente.executeQuery();
+                
+                if (!resultadoCliente.next()) {
+                    txtPantalla.setText("La cuenta bancaria no existe.\nIngrese el No. de CUENTA:\n ");
+                    resultadoCliente.close();
+                    probarCliente.close();
+                    con.close();
+                    inputActual = "";
+                    return;
+                }
+                
+                String nombreCliente = resultadoCliente.getString("nombre");
+                resultadoCliente.close();
+                probarCliente.close();
+                con.close();
+
+                pasoActual = 2;
+                inputActual = "";
+                txtPantalla.setText("Cliente: " + nombreCliente + "\nIngrese el MONTO a retirar:\n ");
+
+            } else if (pasoActual == 2) {
+                int monto = Integer.parseInt(inputActual);
+                
+                if (monto % 10 != 0 || monto % 10000 != 0) {
+                    txtPantalla.setText("Ingrese monto válido (múltiplos de 10k)");
+                    inputActual = "";
+                    con.close();
+                    return;
+                }
+                if (monto < 10000 || monto > 1000000) {
+                    txtPantalla.setText("Monto fuera de rango ($10k - $1M)");
+                    inputActual = "";
+                    con.close();
+                    return;
+                }
+
+                PreparedStatement bloquearCajero = con.prepareStatement("UPDATE cajeros SET estado = 1 WHERE id = ?");
+                bloquearCajero.setInt(1, idCajeroActual);
+                bloquearCajero.executeUpdate();
+                bloquearCajero.close();
+
+                PreparedStatement bloquearCliente = con.prepareStatement("UPDATE clientes SET estado = 1 WHERE ncuenta = ?");
+                bloquearCliente.setInt(1, cuentaClienteActual);
+                bloquearCliente.executeUpdate();
+                bloquearCliente.close();
+
+                PreparedStatement consultaCliente = con.prepareStatement("SELECT nombre, saldo FROM clientes WHERE ncuenta = ?");
+                consultaCliente.setInt(1, cuentaClienteActual);
+                ResultSet resCli = consultaCliente.executeQuery();
+                resCli.next();
+                String nombreCliente = resCli.getString("nombre");
+                double saldoCliente = resCli.getDouble("saldo");
+                resCli.close();
+                consultaCliente.close();
+
+                if (saldoCliente < monto) {
+                    txtPantalla.setText("Saldo insuficiente. Su saldo es: $" + saldoCliente);
+                    liberarSistema(con);
+                    inputActual = "";
+                    pasoActual = 1; 
+                    con.close();
+                    return;
+                }
+
+                PreparedStatement consultaCajero = con.prepareStatement("SELECT ndiez, nveinte, ncincuenta, ncien FROM cajeros WHERE id = ?");
+                consultaCajero.setInt(1, idCajeroActual);
+                ResultSet resCaj = consultaCajero.executeQuery();
+                resCaj.next();
+                int stock10 = resCaj.getInt("ndiez");
+                int stock20 = resCaj.getInt("nveinte");
+                int stock50 = resCaj.getInt("ncincuenta");
+                int stock100 = resCaj.getInt("ncien");
+                resCaj.close();
+                consultaCajero.close();
+
+                int cienk = 0, cincuentak = 0, veintek = 0, diesk = 0;
+                int temp = monto;
+                
+                if (monto == 50000){
+                    veintek = 2; diesk = 1;
+                } else if (monto == 100000){
+                    cincuentak = 1; veintek = 2; diesk = 1;
+                } else {
+                    if (monto > 100000) {
+                        cincuentak += 1; veintek += 2; diesk += 1; temp -= 100000;
+                    }
+                    if (temp >= 100000) { cienk += temp / 100000; temp %= 100000; }
+                    if (temp >= 50000) { cincuentak += temp / 50000; temp %= 50000; }
+                    if (temp >= 20000) { veintek += temp / 20000; temp %= 20000; }
+                    if (temp >= 10000) { diesk += temp / 10000; temp %= 10000; }
+                }
+
+                if (stock100 < cienk || stock50 < cincuentak || stock20 < veintek || stock10 < diesk) {
+                    txtPantalla.setText("No hay fondo suficiente de billetes en este cajero.");
+                    liberarSistema(con);
+                    inputActual = "";
+                    pasoActual = 1;
+                    con.close();
+                    return;
+                }
+
+                double nuevoSaldo = saldoCliente - monto;
+                PreparedStatement actualizarCliente = con.prepareStatement("UPDATE clientes SET saldo = ? WHERE ncuenta = ?");
+                actualizarCliente.setDouble(1, nuevoSaldo);
+                actualizarCliente.setInt(2, cuentaClienteActual);
+                actualizarCliente.executeUpdate();
+                actualizarCliente.close();
+
+                PreparedStatement actualizarCajero = con.prepareStatement("UPDATE cajeros SET ndiez = ?, nveinte = ?, ncincuenta = ?, ncien = ? WHERE id = ?");
+                actualizarCajero.setInt(1, stock10 - diesk);
+                actualizarCajero.setInt(2, stock20 - veintek);
+                actualizarCajero.setInt(3, stock50 - cincuentak);
+                actualizarCajero.setInt(4, stock100 - cienk);
+                actualizarCajero.setInt(5, idCajeroActual);
+                actualizarCajero.executeUpdate();
+                actualizarCajero.close();
+
+                liberarSistema(con);
+                
+                String mensaje = "Su transacción fue realizada con éxito.\n" +
+                                 "El retiro fue de un valor de " + monto + "\n" +
+                                 "Cliente: " + nombreCliente + "\n" +
+                                 "Billetes entregados:";
+                
+                if (cienk > 0) {
+                    mensaje += "\n- 100k: " + cienk;
+                }
+                if (cincuentak > 0) {
+                    mensaje += "\n- 50k: " + cincuentak;
+                }
+                if (veintek > 0) {
+                    mensaje += "\n- 20k: " + veintek;
+                }
+                if (diesk > 0) {
+                    mensaje += "\n- 10k: " + diesk;
+                }
+                
+                mensaje += "\nSaldo restante en cuenta: $" + nuevoSaldo;
+                
+                txtPantalla.setText(mensaje);
+                cargarDatos(); 
+
+                inputActual = "";
+                pasoActual = 0; 
+                con.close();
+            }
+
+        } catch (NumberFormatException e) {
             txtPantalla.setText("Ingrese solo números válidos");
+            inputActual = "";
+        } catch (SQLException e) {
+            txtPantalla.setText("Error SQL: " + e.getMessage());
+            inputActual = "";
         }
-        
     }//GEN-LAST:event_btnConfirmarActionPerformed
 
     /**
@@ -490,4 +632,8 @@ public class interfaz4 extends javax.swing.JFrame {
     private javax.swing.JTable tablaBilletes;
     private javax.swing.JTextArea txtPantalla;
     // End of variables declaration//GEN-END:variables
+
+    private void initComponets() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
 }

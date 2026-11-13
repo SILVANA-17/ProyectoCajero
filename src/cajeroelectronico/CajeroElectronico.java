@@ -16,8 +16,7 @@ public class CajeroElectronico {
      */
     public static void main(String[] args) {
         // TODO code application logic here
-       
-        interfaz4 ventana=new interfaz4();
+        pantalla_Principal ventana=new pantalla_Principal();
         ventana.setLocationRelativeTo(null);
         ventana.setVisible(true);
     }
